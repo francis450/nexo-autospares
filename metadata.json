@@ -1,0 +1,6 @@
+{
+  "name": "Nexo Autospares - Parts Counter",
+  "description": "Kirinyaga Road parts counter in your pocket. Genuine auto parts, lighting, lenses, and accessories with instant car fitment verification and M-Pesa checkout.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
