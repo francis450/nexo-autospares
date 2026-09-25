@@ -1,6 +1,8 @@
 import React from 'react';
 import { MapPin, PhoneCall, Clock, ShieldCheck, Truck, MessageCircle, ExternalLink, Car } from 'lucide-react';
 import { NexoLogo } from './NexoLogo';
+import { SHOP_CONTACT, telUrl, trackCall, whatsappUrl } from '../config/contact';
+import { track } from '../lib/track';
 
 export const CounterTrustFooter: React.FC = () => {
   return (
@@ -24,7 +26,7 @@ export const CounterTrustFooter: React.FC = () => {
             </div>
             <div>
               <span className="font-bold text-white block">Opening Hours</span>
-              <span className="text-slate-400">Mon–Sat: 8:00 AM – 6:30 PM<br/>Sun: 10:00 AM – 4:00 PM</span>
+              <span className="text-slate-400">{SHOP_CONTACT.hours.map(line => <span key={line} className="block">{line}</span>)}</span>
             </div>
           </div>
 
@@ -44,7 +46,7 @@ export const CounterTrustFooter: React.FC = () => {
             </div>
             <div>
               <span className="font-bold text-white block">Boda & Country Parcels</span>
-              <span className="text-slate-400">Instant dispatch to any mechanic garage in Kenya</span>
+              <span className="text-slate-400">Boda delivery in Nairobi, bus and matatu parcels upcountry</span>
             </div>
           </div>
         </div>
@@ -61,17 +63,19 @@ export const CounterTrustFooter: React.FC = () => {
 
           <div className="pt-2 flex flex-wrap gap-2 text-xs">
             <a
-              href="tel:0141088163"
+              href={telUrl}
+              onClick={() => trackCall('footer')}
               className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold flex items-center gap-1.5 transition-colors"
             >
               <PhoneCall className="w-3.5 h-3.5 text-[#E11D48]" />
-              <span>Call: 0141088163</span>
+              <span>Call: {SHOP_CONTACT.phoneDisplay}</span>
             </a>
             <a
-              href="https://wa.me/254141088163"
+              href={whatsappUrl()}
+              onClick={() => track('generate_lead', { method: 'whatsapp', source: 'footer' })}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold flex items-center gap-1.5 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span>WhatsApp Counter</span>

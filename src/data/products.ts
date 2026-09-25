@@ -1,12 +1,12 @@
 import { ProductItem } from '../types';
 
 // Real product image assets generated for Nexo Autospares
-import harrierLensImg from '../assets/images/harrier_head_lens_pair_1790255013015.jpg';
-import premioTailImg from '../assets/images/premio_tail_lens_pair_1790255025912.jpg';
-import tpeMatsImg from '../assets/images/tpe_custom_floor_mats_1790255035572.jpg';
-import windbreakersImg from '../assets/images/car_window_windbreakers_1790255046376.jpg';
-import ledBulbsImg from '../assets/images/led_headlight_bulbs_box_1790255058124.jpg';
-import heroHarrierImg from '../assets/images/hero_harrier_headlens_promo_1790255001470.jpg';
+import harrierLensImg from '../assets/images/harrier_head_lens_pair_1790255013015.webp';
+import premioTailImg from '../assets/images/premio_tail_lens_pair_1790255025912.webp';
+import tpeMatsImg from '../assets/images/tpe_custom_floor_mats_1790255035572.webp';
+import windbreakersImg from '../assets/images/car_window_windbreakers_1790255046376.webp';
+import ledBulbsImg from '../assets/images/led_headlight_bulbs_box_1790255058124.webp';
+import heroHarrierImg from '../assets/images/hero_harrier_headlens_promo_1790255001470.webp';
 
 export { heroHarrierImg };
 

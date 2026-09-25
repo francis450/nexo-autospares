@@ -34,6 +34,9 @@ import { CantFindPartModal } from './components/CantFindPartModal';
 import { PromoPosterBanner } from './components/PromoPosterBanner';
 import { CategoryTiles } from './components/CategoryTiles';
 import { CounterTrustFooter } from './components/CounterTrustFooter';
+import { MobileContactBar } from './components/MobileContactBar';
+import { SHOP_CONTACT, openWhatsApp, telUrl, trackCall } from './config/contact';
+import { sideLabel, unitPriceFor } from './lib/pricing';
 
 export default function App() {
   // --- Persistent State ---
@@ -101,11 +104,7 @@ export default function App() {
 
   // --- Add to Cart Handler ---
   const handleAddToCart = (product: ProductItem, side: PartSide, quantity: number = 1) => {
-    const unitPrice = (side === 'pair' && product.pairPrice)
-      ? product.pairPrice
-      : (side === 'pair')
-        ? product.price * 2
-        : product.price;
+    const unitPrice = unitPriceFor(product, side);
 
     setCart(prev => {
       const existingIndex = prev.findIndex(
@@ -163,10 +162,10 @@ export default function App() {
   // Direct WhatsApp query for a part
   const handleDirectWhatsApp = (product: ProductItem, side: PartSide) => {
     const carText = selectedVehicle ? `for my ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.years})` : '';
-    const text = encodeURIComponent(
-      `Hello Nexo Autospares (Kirinyaga Rd),\n\nI want to order:\n• Part: *${product.cleanTitle}*\n• Part No: *${product.partNo}*\n• Side: *${side}*\n• Price: *KSh ${product.price.toLocaleString()}*\n${carText}\n\nIs it available right now at the counter?`
+    const text = (
+      `Hello Nexo Autospares (Kirinyaga Rd),\n\nI want to order:\n• Part: *${product.cleanTitle}*\n• Part No: *${product.partNo}*\n• Side: *${sideLabel(side)}*\n• Qty: *1*\n• Price: *KSh ${unitPriceFor(product, side).toLocaleString()}*\n${carText}\n\nIs it available right now at the counter?`
     );
-    window.open(`https://wa.me/254141088163?text=${text}`, '_blank');
+    openWhatsApp(text, 'product_row');
   };
 
   // --- Filtered Products List ---
@@ -215,7 +214,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-[#111111]">
+    <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-[#111111] pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* 1. TOP HEADER (Following Top Bar Contract: Zone 1 Wordmark, Zone 2 Clean Links, Zone 3 Actions) */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -254,11 +253,12 @@ export default function App() {
               </button>
             )}
             <a
-              href="tel:0141088163"
+              href={telUrl}
+              onClick={() => trackCall('header')}
               className="text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-1"
             >
               <PhoneCall className="w-3.5 h-3.5 text-[#E11D48]" />
-              <span>0141088163</span>
+              <span>{SHOP_CONTACT.phoneDisplay}</span>
             </a>
           </nav>
 
@@ -332,7 +332,7 @@ export default function App() {
                     Walking up to the Kirinyaga Road counter?
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-500 max-w-xl">
-                    Say "I drive a 2015 Premio" or "2016 Harrier" and we'll show you the guaranteed right part in seconds. No wrong sides, no dead ends.
+                    Pick your car and we'll show the parts listed for it. Not sure? Send your chassis number on WhatsApp and the counter confirms fitment before you pay.
                   </p>
                 </div>
 
@@ -369,7 +369,21 @@ export default function App() {
                 }
               }}
               onOpenWhatsApp={() => {
-                window.open('https://wa.me/254141088163?text=Hello%20Nexo%20Autospares,%20I%20saw%20your%20Harrier%20Head%20Lens%20poster.', '_blank');
+                const promo = PRODUCTS.find(p => p.id === 'nx-harrier-head-lens');
+                if (!promo) return;
+                const carText = selectedVehicle ? `
+My car: ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.years})` : '';
+                openWhatsApp(
+                  `Hello Nexo Autospares (Kirinyaga Rd),
+
+I saw your poster for:
+• Part: *${promo.cleanTitle}*
+• Part No: *${promo.partNo}*
+• Price: *KSh ${promo.price.toLocaleString()} per side*${promo.pairPrice ? ` / KSh ${promo.pairPrice.toLocaleString()} pair` : ''}${carText}
+
+Which side do you have in stock?`,
+                  'promo_banner'
+                );
               }}
             />
 
@@ -532,7 +546,7 @@ export default function App() {
                   </h3>
                 </div>
                 <p className="text-xs text-slate-500 max-w-lg">
-                  Send a photo of your broken lens, vehicle dashboard, or chassis number over WhatsApp. Our Kirinyaga Road attendants respond in 2 minutes.
+                  Send a photo of your broken lens, vehicle dashboard, or chassis number over WhatsApp. Our Kirinyaga Road counter replies during opening hours.
                 </p>
               </div>
 
@@ -552,6 +566,8 @@ export default function App() {
 
       {/* 8. COUNTER TRUST FOOTER (Kirinyaga Road, Map, Phone & Hours) */}
       <CounterTrustFooter />
+
+      <MobileContactBar selectedVehicle={selectedVehicle} />
 
       {/* --- MODALS & DRAWERS --- */}
       {/* Vehicle Selector Modal */}

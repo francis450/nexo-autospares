@@ -1,0 +1,313 @@
+{
+  "metadata": {
+    "project": "Nexo Autospares",
+    "date": "2026-09-25",
+    "scope": "Current SPA UI (src/App.tsx, src/components/*) reviewed from source; WCAG AA; judged for Kenyan mobile buyers ordering via WhatsApp / M-Pesa",
+    "method": "Static code review + color_contrast_checker.py + jsdom render check of ProductDetailModal"
+  },
+  "categories": {
+    "visual_hierarchy": {
+      "score": 5.5,
+      "findings": [
+        {
+          "description": "On a 360px phone the first product sits below the header, vehicle bar, Step-1 card, the full promo poster and 5 rows of category tiles (9 tiles in a 2-column grid) plus the search box — roughly three screens of scrolling before any part is visible",
+          "priority": "high",
+          "fix": "On mobile: collapse categories into one horizontally scrolling chip row, shrink the promo to a single-line banner, and put search + first results above the fold",
+          "impact": 8
+        },
+        {
+          "description": "Every product row carries three competing actions (WhatsApp, Add to Order, details chevron) plus side chips; on mobile the WhatsApp button is icon-only while Add to Order is labelled, so the channel most buyers use looks secondary",
+          "priority": "medium",
+          "fix": "Decide the primary action per context (WhatsApp for most buyers) and keep one labelled primary + one secondary per row",
+          "impact": 6
+        }
+      ]
+    },
+    "typography": {
+      "score": 5.5,
+      "findings": [
+        {
+          "description": "Core information is set at 9-11px (text-[9px]/[10px]/[11px]) and 12px (text-xs): stock badges, fitment badges, side labels, unit prices, form labels, promo sublabels. Too small for outdoor phone use and for older mechanics",
+          "priority": "high",
+          "fix": "Minimum 12px for any label, 14px for body and form inputs, 16px for inputs to avoid iOS zoom; reserve 11px for non-essential metadata only",
+          "impact": 7
+        },
+        {
+          "description": "Barlow Condensed (the brand display face) appears only in the promo poster; everything else is Plus Jakarta Sans with many uppercase tracking-wider micro-labels, so the brand voice is inconsistent",
+          "priority": "low",
+          "fix": "Use font-display for section headings and prices; cut the uppercase micro-label pattern down to one or two places",
+          "impact": 3
+        }
+      ]
+    },
+    "color_contrast": {
+      "score": 5.0,
+      "findings": [
+        {
+          "description": "WhatsApp buttons use white on emerald-600 (#059669) at 3.77:1 — fails AA for their 12-14px bold text. These are the most-used buttons on the site",
+          "priority": "critical",
+          "fix": "Use emerald-700 (#047857, 5.48:1) or #05875F for WhatsApp button backgrounds",
+          "impact": 9
+        },
+        {
+          "description": "slate-400 (#94A3B8) is used for real content — 'Side:' label, category counts, 'Clear', 'Filtering by', placeholders — at 2.45-2.56:1",
+          "priority": "critical",
+          "fix": "Replace with slate-500 (#64748B, 4.76:1) or darker for anything the user must read",
+          "impact": 8
+        },
+        {
+          "description": "M-Pesa green (#0F8A5F) button with white text is 4.36:1 — just under AA",
+          "priority": "high",
+          "fix": "Darken to #0C7450 (the existing hover color)",
+          "impact": 5
+        },
+        {
+          "description": "Green is overloaded: it means WhatsApp, 'fits your car', 'only show my car' toggle, M-Pesa and 'Free'. A buyer can't tell a fitment confirmation from a WhatsApp button at a glance",
+          "priority": "medium",
+          "fix": "Reserve green for fitment/success; give WhatsApp its own treatment (icon + label) and keep M-Pesa green only inside the payment step",
+          "impact": 6
+        }
+      ]
+    },
+    "spacing_layout": {
+      "score": 7.0,
+      "findings": [
+        {
+          "description": "9 category tiles in an 8-column desktop grid leaves one orphan tile on a second row",
+          "priority": "low",
+          "fix": "Use 9 columns, a scroll row, or merge two categories",
+          "impact": 3
+        },
+        {
+          "description": "Header content is max-w-6xl while ActiveVehicleBar is max-w-5xl, so the vehicle chip doesn't align with the logo and results on desktop",
+          "priority": "low",
+          "fix": "Use one container width token",
+          "impact": 2
+        }
+      ]
+    },
+    "interaction_states": {
+      "score": 3.5,
+      "findings": [
+        {
+          "description": "The M-Pesa checkout is a simulation that asks the customer to type their M-Pesa PIN into the web page, shows Paybill 247247 (not Nexo's) and generates a fake receipt, then marks the order 'PAID'. If deployed, customers will believe they paid, and it trains them to enter their PIN on websites — the exact pattern M-Pesa fraud uses",
+          "priority": "critical",
+          "fix": "Remove the PIN field and fake receipt before any public launch. Until Daraja STK push is integrated server-side, route 'Pay' to WhatsApp confirmation or 'Reserve & pay at counter' and show the real till/paybill",
+          "impact": 10
+        },
+        {
+          "description": "Order tracking never changes: status is stored in localStorage when the order is placed and nothing updates it, so 'Track Order' shows the same step forever",
+          "priority": "high",
+          "fix": "Hide tracking until there is a backend, or replace it with 'We'll confirm on WhatsApp' plus the order reference",
+          "impact": 7
+        },
+        {
+          "description": "Every Add to Order opens the checkout drawer, interrupting buyers who need several parts (e.g. both tail lenses + fog lamps)",
+          "priority": "medium",
+          "fix": "Show a non-blocking toast with 'View order' and a persistent cart count; open the drawer only on explicit tap",
+          "impact": 6
+        },
+        {
+          "description": "No out-of-stock state: a product with inStock 0 would still show 'Only 0 left' and remain addable",
+          "priority": "medium",
+          "fix": "Disable Add to Order at 0, switch the CTA to 'Ask on WhatsApp for next shipment'",
+          "impact": 5
+        },
+        {
+          "description": "Share copies window.location.href, which is always the homepage because products have no URLs",
+          "priority": "medium",
+          "fix": "Add product URLs (see auto-seo-schema) and share those",
+          "impact": 6
+        }
+      ]
+    },
+    "navigation_ia": {
+      "score": 5.0,
+      "findings": [
+        {
+          "description": "Search can't handle how Kenyans actually ask: 'Harrier 2015' (the vehicle modal's own placeholder example) returns nothing, multi-word queries like 'premio tail' return nothing, and a chassis number copied from a logbook ('NZT260-3021488') matches nothing — search is a single substring match",
+          "priority": "critical",
+          "fix": "Tokenise queries; match each word against title, model, chassis codes, part number; parse 4-digit years against yearMin/yearMax; strip the serial after '-' in chassis numbers",
+          "impact": 9
+        },
+        {
+          "description": "Below 768px the header hides 'Can't Find Part?', the phone number and 'Track Order'. Mobile is the main audience and calling the counter is a key action",
+          "priority": "high",
+          "fix": "Add a mobile sticky bottom bar: Call · WhatsApp · My car · Order",
+          "impact": 8
+        },
+        {
+          "description": "No routing: the phone back button leaves the site instead of closing a modal or going back to results, and filters/search/product can't be linked or shared on WhatsApp",
+          "priority": "high",
+          "fix": "Add a router with /cars/..., /p/... and push history for modals",
+          "impact": 7
+        }
+      ]
+    },
+    "responsive": {
+      "score": 5.5,
+      "findings": [
+        {
+          "description": "viewport meta sets maximum-scale=1, user-scalable=no — buyers can't pinch-zoom product photos to compare lens shapes or read small text",
+          "priority": "critical",
+          "fix": "Use width=device-width, initial-scale=1 only",
+          "impact": 8
+        },
+        {
+          "description": "Touch targets below 44px: side chips (~26px), checkout quantity -/+ (~20px), trash icon, modal close buttons (32px), clear-vehicle X (~22px), filter-chip X (12px icon)",
+          "priority": "high",
+          "fix": "min-h-11 min-w-11 on all tappable controls",
+          "impact": 7
+        },
+        {
+          "description": "Positive: bottom-sheet modals, sticky purchase bar in product detail, 48px primary pay button — the mobile intent is right",
+          "priority": "low",
+          "fix": "Keep; extend the same pattern to the catalog",
+          "impact": 1
+        }
+      ]
+    },
+    "accessibility": {
+      "score": 3.5,
+      "findings": [
+        {
+          "description": "Modals/drawers have no Escape handling, no focus trap and don't return focus; dialogs lack aria-labelledby",
+          "priority": "critical",
+          "fix": "Use a dialog primitive (native <dialog> or Radix Dialog) for all four overlays",
+          "impact": 8
+        },
+        {
+          "description": "Clickable non-buttons: product photo <div> and title <h3> have onClick but aren't focusable",
+          "priority": "critical",
+          "fix": "Wrap in a <button> or link to the product URL",
+          "impact": 7
+        },
+        {
+          "description": "Icon-only buttons without accessible names: checkout close, can't-find close, quantity -/+ in checkout, trash (title only), mobile WhatsApp (title only), filter-chip X buttons",
+          "priority": "critical",
+          "fix": "Add aria-label to each",
+          "impact": 7
+        },
+        {
+          "description": "Form labels aren't associated with inputs (no htmlFor/id); search inputs have no label; validation errors aren't announced (no role=alert / aria-invalid)",
+          "priority": "critical",
+          "fix": "Associate labels, add aria-describedby for errors and role=alert on the error box",
+          "impact": 7
+        },
+        {
+          "description": "focus:outline-none on inputs and the logo button with only a subtle border change as replacement",
+          "priority": "critical",
+          "fix": "Global focus-visible ring (2px nexo-red, offset 2px)",
+          "impact": 7
+        },
+        {
+          "description": "Side/fitment selection state conveyed only by color (dark vs light chip) with no aria-pressed",
+          "priority": "high",
+          "fix": "aria-pressed on toggle chips, or use a radio group",
+          "impact": 5
+        }
+      ]
+    },
+    "motion_animation": {
+      "score": 7.0,
+      "findings": [
+        {
+          "description": "animate-in / fade-in classes are used on every overlay but no animation plugin is installed, so they do nothing",
+          "priority": "low",
+          "fix": "Add tw-animate-css or remove the classes; the project already ships `motion`",
+          "impact": 2
+        },
+        {
+          "description": "Pulsing red dot in the vehicle bar animates forever with no prefers-reduced-motion handling",
+          "priority": "low",
+          "fix": "motion-safe:animate-pulse",
+          "impact": 2
+        }
+      ]
+    },
+    "content_microcopy": {
+      "score": 5.0,
+      "findings": [
+        {
+          "description": "Product detail specs are hard-coded for every product: 'Material: UV-Treated Polycarbonate', 'Condition: Brand New / OEM Spec', 'Origin: Direct Factory Import' — shown on jumper cables, floor mats and bottle jacks too",
+          "priority": "critical",
+          "fix": "Drive specs from product data and omit rows that don't apply",
+          "impact": 8
+        },
+        {
+          "description": "Fitment data errors: '3-Step Chrome Grille – Hiace 200' is marked UNIVERSAL, so it shows 'Fits your Premio/Harrier'; UNIVERSAL is treated as 'fits every car' everywhere",
+          "priority": "critical",
+          "fix": "Set the grille to BOTH/PAIR with fitVehicles only; show universal items as 'Universal' rather than 'Fits your X'",
+          "impact": 8
+        },
+        {
+          "description": "When a part does NOT fit, the detail panel still says 'Counter verified: Guaranteed direct replacement match'",
+          "priority": "critical",
+          "fix": "Show that line only when isExactFit is true",
+          "impact": 8
+        },
+        {
+          "description": "Unbacked promises: '100% Fitment Guarantee', 'respond in 2 minutes', 'Ready in 15 mins', 'Instant dispatch to any mechanic garage in Kenya', 'thousands of parts', 'VAT incl.' — none linked to a policy",
+          "priority": "high",
+          "fix": "Keep only what the shop commits to in writing; link the footer's 'test-fit and exchange' promise to a policy page",
+          "impact": 7
+        },
+        {
+          "description": "Internal/jargon labels shown to customers: 'ERP Item Code', 'Order Tray', 'Showing N parts in stock' (counts results, not stock)",
+          "priority": "medium",
+          "fix": "Show part number only; use 'Cart' or 'My order'; 'N parts'",
+          "impact": 4
+        },
+        {
+          "description": "Positive: genuinely local copy — Boda rider, 2NK/Easy Coach parcels, 'Mechanic name', 'Shell Globe', LH passenger / RH driver (correct for Kenyan RHD cars), chassis-number quote flow",
+          "priority": "low",
+          "fix": "Keep this voice",
+          "impact": 1
+        }
+      ]
+    },
+    "ai_slop": {
+      "score": 6.0,
+      "findings": [
+        {
+          "description": "Promo poster uses the stock AI treatment: blurred glowing orbs, 4-up icon+title+subtitle feature grid ('Clear Vision / Durable / Perfect Fit / OEM Style'), gradient overlay on photo",
+          "priority": "medium",
+          "fix": "Replace with the actual WhatsApp poster style the shop uses: bold product photo, price, part number, car — no orbs",
+          "impact": 5
+        },
+        {
+          "description": "Sparkles icon used for 'Tail Lenses', 'Chrome Kits' and 'Featured'; Eye icon for head lenses — generic icon picks rather than part silhouettes",
+          "priority": "low",
+          "fix": "Use simple part silhouettes (lens, lamp, mat, visor) or photos",
+          "impact": 3
+        },
+        {
+          "description": "Generated product photos (filenames with timestamps) instead of real counter stock; buyers of lenses compare exact shapes",
+          "priority": "high",
+          "fix": "Photograph real stock, both sides, with part number visible",
+          "impact": 7
+        }
+      ]
+    },
+    "performance_design": {
+      "score": 4.0,
+      "findings": [
+        {
+          "description": "Images are 550-850 KB JPEGs; the promo hero alone is 852 KB and loads eagerly above the fold — several MB on first visit over mobile data",
+          "priority": "high",
+          "fix": "WebP/AVIF at 2 sizes (≤80 KB list thumbs, ≤150 KB hero), width/height attributes, fetchpriority on hero only",
+          "impact": 8
+        },
+        {
+          "description": "Three Google Font families with ~13 weights/styles requested (Barlow Condensed ×7, Plus Jakarta ×4, JetBrains Mono ×2)",
+          "priority": "medium",
+          "fix": "Trim to the weights actually used (≈5) or self-host subsets",
+          "impact": 5
+        }
+      ]
+    }
+  },
+  "coherence": {
+    "score": 6.0
+  }
+}

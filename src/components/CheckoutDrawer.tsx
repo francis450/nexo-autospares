@@ -317,7 +317,7 @@ export const CheckoutDrawer: React.FC<CheckoutDrawerProps> = ({
                     <span className="text-emerald-400 font-bold uppercase text-[10px]">Free (KSh 0)</span>
                   </div>
                   <p className={`mt-0.5 ${fulfillmentType === 'counter_pickup' ? 'text-slate-300' : 'text-slate-500'}`}>
-                    Ready in 15 mins. 120m from Shell Globe, Kirinyaga Road, Nairobi CBD.
+                    Collect during opening hours. 120m from Shell Globe, Kirinyaga Road, Nairobi CBD.
                   </p>
                 </div>
               </label>

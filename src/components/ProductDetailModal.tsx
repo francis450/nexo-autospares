@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   X, 
   CheckCircle2, 
@@ -11,9 +11,17 @@ import {
   Truck, 
   Check, 
   Share2,
-  Sparkles
+  Sparkles,
+  Download,
+  Loader2
 } from 'lucide-react';
 import { ProductItem, PartSide, VehicleModel } from '../types';
+import { SHOP_CONTACT, openWhatsApp, telUrl, trackCall, whatsappUrl } from '../config/contact';
+import { sideLabel, unitPriceFor } from '../lib/pricing';
+import { SharePoster } from './SharePoster';
+
+// html-to-image is only needed for the share poster; keep it out of the main bundle.
+const loadPosterLib = () => import('../lib/posterImage');
 
 interface ProductDetailModalProps {
   product: ProductItem | null;
@@ -24,7 +32,12 @@ interface ProductDetailModalProps {
   onDirectCheckout: (product: ProductItem, side: PartSide, quantity: number) => void;
 }
 
-export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
+// Keyed by product so side/quantity/poster state never leaks between products,
+// and hooks inside the content always run unconditionally.
+export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, ...rest }) =>
+  product ? <ProductDetailModalContent key={product.id} product={product} {...rest} /> : null;
+
+const ProductDetailModalContent: React.FC<ProductDetailModalProps & { product: ProductItem }> = ({
   product,
   preselectedSide = 'LH',
   selectedVehicle,
@@ -32,8 +45,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onAddToCart,
   onDirectCheckout,
 }) => {
-  if (!product) return null;
-
   const defaultSide: PartSide = product.sideAvailable === 'PAIR_ONLY'
     ? 'pair'
     : product.sideAvailable === 'LH_ONLY'
@@ -46,7 +57,31 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   const [side, setSide] = useState<PartSide>(defaultSide);
   const [quantity, setQuantity] = useState<number>(1);
-  const [copyFeedback, setCopyFeedback] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [posterBusy, setPosterBusy] = useState(false);
+  const posterRef = useRef<HTMLDivElement>(null);
+  const posterFileRef = useRef<Promise<File> | null>(null);
+
+  const getPosterFile = () => {
+    if (!posterFileRef.current && posterRef.current) {
+      const fileName = `nexo-${product.partNo.replace(/[^\w-]+/g, '_')}.jpg`;
+      const node = posterRef.current;
+      posterFileRef.current = loadPosterLib().then(lib => lib.renderPosterFile(node, fileName));
+      posterFileRef.current.catch(() => { posterFileRef.current = null; });
+    }
+    return posterFileRef.current;
+  };
+
+  // Pre-render so the tap on Share can call navigator.share while the user gesture is still fresh.
+  useEffect(() => {
+    const timer = setTimeout(() => { getPosterFile(); }, 400);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const flashFeedback = (message: string) => {
+    setShareFeedback(message);
+    setTimeout(() => setShareFeedback(null), 2500);
+  };
 
   // Fitment logic
   const isExactFit = selectedVehicle 
@@ -54,36 +89,50 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     : null;
 
   // Compute price
-  const unitPrice = (side === 'pair' && product.pairPrice)
-    ? product.pairPrice
-    : (side === 'pair')
-      ? product.price * 2
-      : product.price;
+  const unitPrice = unitPriceFor(product, side);
 
   const totalPrice = unitPrice * quantity;
 
   // WhatsApp Order message
   const handleOrderWhatsApp = () => {
-    const sideText = side === 'pair' ? 'Complete Pair (LH + RH)' : side === 'LH' ? 'Left Hand (Passenger)' : side === 'RH' ? 'Right Hand (Driver)' : 'Standard';
+    const sideText = sideLabel(side);
     const carText = selectedVehicle ? `for my ${selectedVehicle.make} ${selectedVehicle.model} (${selectedVehicle.years})` : '';
     
-    const message = encodeURIComponent(
+    const message = (
       `Hello Nexo Autospares Kirinyaga Rd,\n\nI want to order:\n• Part: *${product.cleanTitle}*\n• Part No: *${product.partNo}*\n• Side: *${sideText}*\n• Qty: *${quantity}*\n• Price: *KSh ${totalPrice.toLocaleString()}*\n${carText}\n\nPlease confirm availability and M-Pesa payment details.`
     );
-    window.open(`https://wa.me/254141088163?text=${message}`, '_blank');
+    openWhatsApp(message, 'product_detail');
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product.cleanTitle,
-        text: `Check out ${product.cleanTitle} at Nexo Autospares Kirinyaga Road`,
-        url: window.location.href,
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      setCopyFeedback(true);
-      setTimeout(() => setCopyFeedback(false), 2000);
+  const handleShare = async () => {
+    const posterFile = getPosterFile();
+    if (!posterFile) return;
+    setPosterBusy(true);
+    try {
+      const file = await posterFile;
+      const text = `${product.cleanTitle} · Part No. ${product.partNo} · KSh ${product.price.toLocaleString()} at ${SHOP_CONTACT.name}, ${SHOP_CONTACT.addressShort}.\nOrder on WhatsApp: ${whatsappUrl(undefined, { withRef: false })}`;
+      const { shareOrDownload } = await loadPosterLib();
+      const result = await shareOrDownload(file, text);
+      if (result === 'downloaded') flashFeedback('Poster downloaded');
+    } catch {
+      flashFeedback('Could not create poster');
+    } finally {
+      setPosterBusy(false);
+    }
+  };
+
+  const handleDownloadPoster = async () => {
+    const posterFile = getPosterFile();
+    if (!posterFile) return;
+    setPosterBusy(true);
+    try {
+      const { downloadFile } = await loadPosterLib();
+      downloadFile(await posterFile);
+      flashFeedback('Poster downloaded');
+    } catch {
+      flashFeedback('Could not create poster');
+    } finally {
+      setPosterBusy(false);
     }
   };
 
@@ -94,6 +143,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         role="dialog"
         aria-modal="true"
       >
+        {/* Off-screen poster template captured by Share / Download */}
+        <div aria-hidden="true" className="fixed top-0 left-[-10000px] pointer-events-none">
+          <SharePoster ref={posterRef} product={product} />
+        </div>
+
         {/* Modal Top Bar */}
         <div className="p-3.5 sm:p-4 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
           <div className="flex items-center gap-2">
@@ -107,12 +161,28 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
+            {shareFeedback && (
+              <span role="status" className="text-[11px] font-semibold text-emerald-700 mr-1">
+                {shareFeedback}
+              </span>
+            )}
+            <button
+              onClick={handleDownloadPoster}
+              disabled={posterBusy}
+              className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50"
+              title="Download poster"
+              aria-label="Download poster image"
+            >
+              <Download className="w-4 h-4" />
+            </button>
             <button
               onClick={handleShare}
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
-              title="Share part"
+              disabled={posterBusy}
+              className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50"
+              title="Share poster"
+              aria-label="Share poster image"
             >
-              <Share2 className="w-4 h-4" />
+              {posterBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
             </button>
             <button
               onClick={onClose}
@@ -151,9 +221,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug">
                 {product.cleanTitle}
               </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                ERP Item Code: <span className="font-mono text-slate-700">{product.itemCode}</span>
-              </p>
             </div>
 
             <div className="sm:text-right shrink-0">
@@ -161,7 +228,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 KSh {unitPrice.toLocaleString()}
               </div>
               <div className="text-xs text-slate-500 mt-0.5">
-                {side === 'pair' ? 'Per Pair (LH + RH)' : `Per ${product.unit}`} · VAT incl.
+                {side === 'pair' ? 'Per Pair (LH + RH)' : `Per ${product.unit}`}
               </div>
             </div>
           </div>
@@ -202,7 +269,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   Fits: {product.compatibleModelsText}, {product.fitYears}
                 </div>
                 <div className="text-xs opacity-80 mt-0.5">
-                  Counter verified: Guaranteed direct replacement match. No wiring alteration or bracket modification needed.
+                  {isExactFit === true
+                    ? 'Listed as a direct replacement for your car. Send your chassis number on WhatsApp and the counter confirms before you pay.'
+                    : 'Not sure it fits? Send your chassis number on WhatsApp and the counter confirms before you pay.'}
                 </div>
               </div>
             </div>
@@ -276,21 +345,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </p>
 
             <div className="grid grid-cols-2 gap-2 text-xs pt-2">
+              {/* Only facts we hold per product; material/condition specs aren't in the data yet. */}
               <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase">Condition</span>
-                <span className="font-semibold text-slate-800">Brand New / OEM Spec</span>
+                <span className="text-slate-500 block text-[10px] uppercase">Part No.</span>
+                <span className="font-semibold font-mono text-slate-800">{product.partNo}</span>
               </div>
               <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase">Counter Stock</span>
-                <span className="font-semibold text-emerald-700">{product.inStock} Available in Shop</span>
-              </div>
-              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase">Material</span>
-                <span className="font-semibold text-slate-800">UV-Treated Polycarbonate</span>
-              </div>
-              <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
-                <span className="text-slate-400 block text-[10px] uppercase">Origin</span>
-                <span className="font-semibold text-slate-800">Direct Factory Import</span>
+                <span className="text-slate-500 block text-[10px] uppercase">Counter Stock</span>
+                <span className="font-semibold text-emerald-700">
+                  {product.inStock > 0 ? 'In stock' : 'Ask on WhatsApp'}
+                </span>
               </div>
             </div>
           </div>
@@ -303,16 +367,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
               <div>
                 <span className="font-bold text-slate-900 block">Nexo Autospares Shop</span>
-                <span className="text-slate-500">Kirinyaga Road, 120m from Shell Globe, Nairobi</span>
+                <span className="text-slate-500">{SHOP_CONTACT.addressLong}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="tel:0141088163"
+                href={telUrl}
+                onClick={() => trackCall('product_detail')}
                 className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:text-slate-900 font-semibold flex items-center gap-1.5"
               >
                 <PhoneCall className="w-3.5 h-3.5 text-[#E11D48]" />
-                <span>0141088163</span>
+                <span>{SHOP_CONTACT.phoneDisplay}</span>
               </a>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, ShieldAlert, CheckCircle2, MessageCircle, ShoppingBag, ChevronRight } from 'lucide-react';
 import { ProductItem, PartSide, VehicleModel } from '../types';
+import { unitPriceFor } from '../lib/pricing';
 
 interface ProductRowCardProps {
   product: ProductItem;
@@ -36,11 +37,7 @@ export const ProductRowCard: React.FC<ProductRowCardProps> = ({
     : null;
 
   // Price adjustment based on side
-  const currentPrice = (activeSide === 'pair' && product.pairPrice)
-    ? product.pairPrice
-    : (activeSide === 'pair')
-      ? product.price * 2
-      : product.price;
+  const currentPrice = unitPriceFor(product, activeSide);
 
   return (
     <div className={`group bg-white rounded-xl border transition-all duration-150 p-3 sm:p-4 hover:shadow-md ${
@@ -90,9 +87,10 @@ export const ProductRowCard: React.FC<ProductRowCardProps> = ({
                 <span>Fits: {product.compatibleModelsText}</span>
               </span>
             )}
-            {product.inStock <= 3 ? (
-              <span className="text-[11px] font-medium text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
-                Only {product.inStock} left in Kirinyaga shop
+            {/* Stock is hand-entered until ERPNext sync, so no "only N left" counts. */}
+            {product.inStock <= 0 ? (
+              <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                Ask on WhatsApp for stock
               </span>
             ) : (
               <span className="text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">

@@ -89,7 +89,7 @@ export const PromoPosterBanner: React.FC<PromoPosterBannerProps> = ({
               className="px-4 py-3 bg-white/10 hover:bg-white/15 text-white font-semibold text-xs sm:text-sm rounded-xl transition-all flex items-center gap-2 cursor-pointer"
             >
               <MessageCircle className="w-4 h-4 text-emerald-400" />
-              <span>Inquire: 0141088163</span>
+              <span>Ask on WhatsApp</span>
             </button>
           </div>
         </div>
@@ -100,6 +100,9 @@ export const PromoPosterBanner: React.FC<PromoPosterBannerProps> = ({
             <img
               src={heroHarrierImg}
               alt="Harrier Head Lens counter stock"
+              width={900}
+              height={502}
+              fetchPriority="high"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               referrerPolicy="no-referrer"
             />

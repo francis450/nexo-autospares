@@ -74,7 +74,7 @@ export const VehicleSelectorModal: React.FC<VehicleSelectorModalProps> = ({
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="e.g. Premio 260, Harrier 2015, NZE, Probox, Axio..."
+              placeholder="e.g. Premio 260, Harrier, NZE, Probox, Axio..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition-all"
@@ -217,7 +217,7 @@ export const VehicleSelectorModal: React.FC<VehicleSelectorModalProps> = ({
           ) : (
             <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>100% Fitment Guarantee</span>
+              <span>We confirm fitment on WhatsApp before you pay</span>
             </div>
           )}
           <button

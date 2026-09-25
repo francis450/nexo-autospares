@@ -13,6 +13,7 @@ import {
   Car
 } from 'lucide-react';
 import { Order } from '../types';
+import { SHOP_CONTACT, openWhatsApp, telUrl, trackCall } from '../config/contact';
 
 interface OrderStatusViewProps {
   order: Order;
@@ -61,10 +62,10 @@ export const OrderStatusView: React.FC<OrderStatusViewProps> = ({
   ];
 
   const handleShareWhatsApp = () => {
-    const text = encodeURIComponent(
+    const text = (
       `Hello Nexo Autospares, I am tracking my Order *#${order.orderNumber}* for ${order.items.map(i => `${i.product.cleanTitle} (${i.selectedSide})`).join(', ')}.\nTotal: KSh ${order.totalAmount.toLocaleString()}.\nPlease update me on readiness.`
     );
-    window.open(`https://wa.me/254141088163?text=${text}`, '_blank');
+    openWhatsApp(text, 'order_status');
   };
 
   return (
@@ -230,11 +231,12 @@ export const OrderStatusView: React.FC<OrderStatusViewProps> = ({
 
         <div className="pt-2 flex flex-wrap gap-2 text-xs">
           <a
-            href="tel:0141088163"
+            href={telUrl}
+            onClick={() => trackCall('order_status')}
             className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg flex items-center gap-2 transition-colors"
           >
             <PhoneCall className="w-3.5 h-3.5 text-[#E11D48]" />
-            <span>Call Shop: 0141088163</span>
+            <span>Call Shop: {SHOP_CONTACT.phoneDisplay}</span>
           </a>
           <button
             onClick={onBackToShopping}
